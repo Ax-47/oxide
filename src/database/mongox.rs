@@ -1,20 +1,14 @@
-use std::{env, collections::HashMap};
-extern crate dotenv;
-
+use std::{env};
 use dotenv::dotenv;
-
-use futures::stream::TryStreamExt;
 use mongodb::{
-    bson::{doc,Document, extjson::de::Error, oid::ObjectId,to_bson},
+    bson::{doc,Document, extjson::de::Error},
     results::{DeleteResult, InsertOneResult, UpdateResult},
     Client, Collection,
 };
-
 use crate::{
     database::models::*,
 
 };
-
 pub struct MongoRepo {
     col: Collection<GuildData>,
  
@@ -82,123 +76,6 @@ impl MongoRepo {
         }
         Ok(guild_data_detail.unwrap().unwrap())
     }
-    pub async fn get_guild_data_mail(&self, mail: &String) -> Result<GuildData,&'static str> {
-        
-        let filter = doc! {"email": mail};
-        match self
-        .col
-        .find_one(filter, None)
-        .await
-        .ok()
-        .expect("msg") {
-            Some(u)=>return Ok(u),
-            None=>return Err("err"),
-           
-        }
-    }
-    pub async fn get_guild_data_a(&self, filter: Document) -> Result<GuildData,&'static str> {
-        
-        
-        let guild_data_detail = self
-            .col
-            .find_one(filter, None)
-            .await
-            .ok()
-            .expect("msg")
-            ;
-
-      
-        match guild_data_detail {
-            Some(u)=>return Ok(u),
-            None=>return Err("err"),
-        }
-    }
-    // pub async fn update_guild_data(&self, id: &String, new_guild_data: guild_data) -> Result<UpdateResult, Error> {
-    //     let obj_id = ObjectId::parse_str(id).unwrap();
-    //     let filter = doc! {"_id": obj_id};
-    //     let new_doc = doc! {
-    //         "$set":
-    //             {
-    //                 "name": new_guild_data.name,
-    //                 "location": new_guild_data.email,
-    //                 "title": new_guild_data.password
-    //             },
-    //     };
-    //     let updated_doc = self
-    //         .col
-    //         .update_one(filter, new_doc, None)
-    //         .await
-    //         .ok()
-    //         .expect("Error updating guild_data");
-    //     Ok(updated_doc)
-    // }
-    pub async fn update_guild_datavalided_drop(&self, id: &String) -> Result<UpdateResult, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
-        let filter = doc! {"_id": obj_id};
-
-        let new_doc:Document = doc! {
-           
-            "$unset": {
-                "session_auth":""
-        }
-        
-    };
-        let update = new_doc;
-        let updated_doc = self
-            .col
-            .update_one(filter, update, None)
-            .await
-            .ok()
-            .expect("Error updating guild_data");
-        Ok(updated_doc)
-    }
-    
-    pub async fn update_guild_datavalided(&self, id: &String, key: &String,volume:&String) -> Result<UpdateResult, Error> {
-        let obj_id = ObjectId::parse_str(id).unwrap();
-        let filter = doc! {"_id": obj_id};
-
-        let new_doc:Document = doc! {
-            "$set":
-                {
-                    "valid": true,
-                    format!("session_auth.{}",key): volume,
-
-                },
-            "$unset": {
-                "session_register":"",
-                "session_login":""
-        }
-        
-    };
-        let update = new_doc;
-        let updated_doc = self
-            .col
-            .update_one(filter, update, None)
-            .await
-            .ok()
-            .expect("Error updating guild_data");
-        Ok(updated_doc)
-    }
-    pub async fn update_guild_datavalided_mail(&self, mail: &String, guild_data: HashMap<String,String>) -> Result<UpdateResult, Error> {
-        
-        let filter = doc! {"email": mail};
-        let new_doc = doc! {
-   
-            "$set":
-                {
-                    "session_login": to_bson(&guild_data).unwrap() ,
-
-                }
-        };
-        let updated_doc = self
-            .col
-            .update_one(filter, new_doc, None)
-            .await
-            .ok()
-            ;
-            
-        Ok(updated_doc.unwrap())
-    }
     pub async fn update_guild(&self, id: &String, guild_dataname: Document) -> Result<UpdateResult, Error> {
        
         let filter = doc! {"guild_id": id};
@@ -224,22 +101,4 @@ impl MongoRepo {
         Ok(guild_data_detail)
     }
 
-    pub async fn get_all_guild_datas(&self) -> Result<Vec<GuildData>, Error> {
-        let mut cursors = self
-            .col
-            .find(None, None)
-            .await
-            .ok()
-            .expect("Error getting list of guild_datas");
-        let mut guild_datas: Vec<GuildData> = Vec::new();
-        while let Some(guild_data) = cursors
-            .try_next()
-            .await
-            .ok()
-            .expect("Error mapping through cursor")
-        {
-            guild_datas.push(guild_data)
-        }
-        Ok(guild_datas)
-    }
 }
