@@ -1,1 +1,6 @@
 /target
+/logs
+.env
+application.yml
+Cargo.lock
+Lavalink.jar
