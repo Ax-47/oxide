@@ -1,16 +1,10 @@
+mod commands;
 mod database;
 mod handler;
-mod commands;
 mod imgchacker;
-use poise::serenity_prelude as serenity;
-
+use crate::{commands::slash::*, database::models::*, database::mongox, handler::handler as hl};
 use dotenv::dotenv;
-use crate::{
-    database::mongox,
-    database::models::*,
-    handler::handler as hl,
-    commands::slash::*
-};
+use poise::serenity_prelude as serenity;
 
 #[poise::command(slash_command, prefix_command)]
 async fn age(
@@ -27,14 +21,6 @@ async fn age(
 async fn main() {
     dotenv().expect("ooo");
 
-
-
-
-
-
-
-
-
     let database = mongox::MongoRepo::init().await;
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -49,12 +35,12 @@ async fn main() {
                 craetevc::set_vc(),
                 craetevc::unset_vc(),
                 sudotest::sudo_join(),
-                sudotest::sudo_leave()
-                ],
-                event_handler:|ctx,event,framework,user_data |{
-                    Box::pin(hl::event_handler(ctx,event,framework,user_data))
-                },
-                
+                sudotest::sudo_leave(),
+            ],
+            event_handler: |ctx, event, framework, user_data| {
+                Box::pin(hl::event_handler(ctx, event, framework, user_data))
+            },
+
             ..Default::default()
         })
         .token(std::env::var("DISCORD_TOKEN").expect("missing DISCORD_TOKEN"))
@@ -62,9 +48,10 @@ async fn main() {
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data {database})
+                Ok(Data { database })
             })
         });
 
     framework.run().await.unwrap();
 }
+

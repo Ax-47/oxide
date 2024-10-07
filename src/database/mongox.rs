@@ -1,17 +1,13 @@
-use std::{env};
+use crate::database::models::*;
 use dotenv::dotenv;
 use mongodb::{
-    bson::{doc,Document, extjson::de::Error},
+    bson::{doc, extjson::de::Error, Document},
     results::{DeleteResult, InsertOneResult, UpdateResult},
     Client, Collection,
 };
-use crate::{
-    database::models::*,
-
-};
+use std::env;
 pub struct MongoRepo {
     col: Collection<GuildData>,
- 
 }
 impl MongoRepo {
     pub async fn init() -> Self {
@@ -33,17 +29,17 @@ impl MongoRepo {
             .expect("error connecting to database");
         let db = client.database(database.as_str());
         let col: Collection<GuildData> = db.collection(collection.as_str());
-        MongoRepo { col}
+        MongoRepo { col }
     }
 
     pub async fn create_guild_data(&self, guild: String) -> Result<InsertOneResult, Error> {
         let new_doc = GuildData {
             guild_id: Some(guild),
             join: None,
-            leave:None ,
+            leave: None,
             music_dash: None,
             vc: None,
-            choose:None,
+            choose: None,
         };
         let guild_data = self
             .col
@@ -56,40 +52,31 @@ impl MongoRepo {
     }
 
     pub async fn get_guildid_data(&self, id: &String) -> Result<GuildData, GuildData> {
-
-        let guild_data_detail = self
-            .col
-            .find_one(doc! {"guild_id": id}, None)
-            .await
-            .ok();
-        if guild_data_detail.is_none(){
-            let err=GuildData{
-                guild_id:None,
-                join:None,
-                leave:None,
-                music_dash:None,
-                vc:None,
-                choose:None,
-
+        let guild_data_detail = self.col.find_one(doc! {"guild_id": id}, None).await.ok();
+        if guild_data_detail.is_none() {
+            let err = GuildData {
+                guild_id: None,
+                join: None,
+                leave: None,
+                music_dash: None,
+                vc: None,
+                choose: None,
             };
-            return Err(err)
+            return Err(err);
         }
         Ok(guild_data_detail.unwrap().unwrap())
     }
-    pub async fn update_guild(&self, id: &String, guild_dataname: Document) -> Result<UpdateResult, Error> {
-       
+    pub async fn update_guild(
+        &self,
+        id: &String,
+        guild_dataname: Document,
+    ) -> Result<UpdateResult, Error> {
         let filter = doc! {"guild_id": id};
-        let updated_doc = self
-            .col
-            .update_one(filter, guild_dataname, None)
-            .await
-            .ok()
-            ;
-            
+        let updated_doc = self.col.update_one(filter, guild_dataname, None).await.ok();
+
         Ok(updated_doc.unwrap())
     }
     pub async fn delete_guild_data(&self, id: &String) -> Result<DeleteResult, Error> {
-        
         let filter = doc! {"guild_id": id};
         let guild_data_detail = self
             .col
@@ -100,5 +87,5 @@ impl MongoRepo {
 
         Ok(guild_data_detail)
     }
-
 }
+
